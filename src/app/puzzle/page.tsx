@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import type { PuzzleEntry, PageSize, PuzzleSideData, PuzzleSideKey } from '@/lib/types';
 import PuzzleEntryCard from '@/components/PuzzleEntry';
+import { savePuzzle, fetchPuzzle } from '@/lib/supabase';
 
 function emptySide(): PuzzleSideData {
   return {
@@ -25,6 +28,14 @@ function emptyEntry(id: string, templateIndex: number = 0): PuzzleEntry {
 }
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const puzzleId = searchParams.get('id');
+
+  const [puzzleDbId, setPuzzleDbId] = useState<string | null>(puzzleId);
+  const [puzzleTitle, setPuzzleTitle] = useState('Untitled Puzzle');
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [entries, setEntries] = useState<PuzzleEntry[]>([
     emptyEntry('A', 0),
     emptyEntry('B', 1),
@@ -42,6 +53,36 @@ export default function Home() {
     C: { front: { translate: false, image: false }, back: { translate: false, image: false } },
   });
   const [error, setError] = useState<string | null>(null);
+
+  // ─── Load from Supabase if ?id= is present ──────────────────────────
+  useEffect(() => {
+    if (!puzzleId) return;
+    fetchPuzzle(puzzleId).then((record) => {
+      if (!record) return;
+      setPuzzleTitle(record.title);
+      setPageSize(record.page_size);
+      setEntries(record.entries);
+      setPuzzleDbId(record.id);
+    });
+  }, [puzzleId]);
+
+  // ─── Save to Supabase ────────────────────────────────────────────────
+  const handleSaveToCloud = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const record = await savePuzzle(puzzleTitle, pageSize, entries, puzzleDbId ?? undefined);
+      setPuzzleDbId(record.id);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+      // Update URL without page reload so refresh keeps the id
+      window.history.replaceState({}, '', `/puzzle?id=${record.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const updateEntry = useCallback((index: number, updated: PuzzleEntry) => {
     setEntries((prev) => {
@@ -313,26 +354,63 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🧩</span>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Vocabulary Puzzle Generator</h1>
-              <p className="text-sm text-gray-500">Create printable jigsaw puzzles for language learning</p>
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+          {/* Back to hub */}
+          <Link href="/" className="text-gray-400 hover:text-gray-700 text-sm transition-colors shrink-0">
+            ← Hub
+          </Link>
+          <div className="h-4 w-px bg-gray-200" />
+          {/* Editable title */}
+          {editingTitle ? (
+            <input
+              autoFocus
+              className="text-lg font-bold text-gray-900 border-b-2 border-blue-400 outline-none bg-transparent w-52"
+              value={puzzleTitle}
+              onChange={(e) => setPuzzleTitle(e.target.value)}
+              onBlur={() => setEditingTitle(false)}
+              onKeyDown={(e) => { if (e.key === 'Enter') setEditingTitle(false); }}
+            />
+          ) : (
+            <button
+              onClick={() => setEditingTitle(true)}
+              className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors text-left"
+              title="Click to rename"
+            >
+              {puzzleTitle}
+            </button>
+          )}
+          {/* spacer */}
+          <div className="flex-1" />
+          {/* Actions */}
           <div className="flex items-center gap-2">
+            <Link
+              href="/puzzles"
+              className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              📚 My Puzzles
+            </Link>
             <button
               onClick={handleLoad}
               className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              📂 Load
+              📂 Import
             </button>
             <button
               onClick={handleSave}
               className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              💾 Save
+              ⬇️ Export
+            </button>
+            <button
+              onClick={handleSaveToCloud}
+              disabled={saving}
+              className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                saveSuccess
+                  ? 'bg-green-500 text-white'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              } disabled:opacity-50`}
+            >
+              {saving ? 'Saving…' : saveSuccess ? '✓ Saved!' : '☁️ Save'}
             </button>
           </div>
         </div>
