@@ -208,7 +208,7 @@ async function drawRightPiece(
 
   if (side.imageData) {
     try {
-      const imageBuffer = dataUrlToBuffer(side.imageData);
+      const imageBuffer = await getImageBuffer(side.imageData);
 
       doc.save();
       doc.path(svgPath).clip();
@@ -243,7 +243,7 @@ async function drawRightBackPiece(
 
   if (side.imageData) {
     try {
-      const imageBuffer = dataUrlToBuffer(side.imageData);
+      const imageBuffer = await getImageBuffer(side.imageData);
 
       doc.save();
       doc.path(svgPath).clip();
@@ -317,4 +317,14 @@ function dataUrlToBuffer(dataUrl: string): Buffer {
     return Buffer.from(dataUrl.split(',')[1], 'base64');
   }
   return Buffer.from(dataUrl, 'base64');
+}
+
+async function getImageBuffer(imageData: string): Promise<Buffer> {
+  if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+    const res = await fetch(imageData);
+    if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+    const ab = await res.arrayBuffer();
+    return Buffer.from(ab);
+  }
+  return dataUrlToBuffer(imageData);
 }

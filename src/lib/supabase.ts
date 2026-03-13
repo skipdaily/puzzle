@@ -85,3 +85,31 @@ export async function renamePuzzle(id: string, title: string): Promise<void> {
     .eq('id', id);
   if (error) throw new Error(error.message);
 }
+
+// ─── Image Storage ────────────────────────────────────────────────────────────
+
+const IMAGE_BUCKET = 'puzzle-images';
+
+/**
+ * Uploads a base64-encoded image to Supabase Storage and returns its public URL.
+ * Falls back to a data URL if the upload fails.
+ */
+export async function uploadPuzzleImage(
+  base64Data: string,
+  mimeType: string = 'image/png',
+): Promise<string> {
+  const ext = mimeType.split('/')[1] || 'png';
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  // Convert base64 → Uint8Array
+  const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+
+  const { error } = await supabase.storage
+    .from(IMAGE_BUCKET)
+    .upload(filename, bytes, { contentType: mimeType, upsert: false });
+
+  if (error) throw new Error(`Storage upload failed: ${error.message}`);
+
+  const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(filename);
+  return data.publicUrl;
+}

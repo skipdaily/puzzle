@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { uploadPuzzleImage } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
@@ -86,9 +87,16 @@ export async function POST(request: Request) {
 
     const { data, mimeType } = imagePart.inlineData;
 
-    return NextResponse.json({
-      imageData: `data:${mimeType || 'image/png'};base64,${data}`,
-    });
+    // Upload to Supabase Storage; fall back to data URL if upload fails
+    let imageData: string;
+    try {
+      imageData = await uploadPuzzleImage(data!, mimeType || 'image/png');
+    } catch (uploadErr) {
+      console.warn('Supabase Storage upload failed, falling back to base64:', uploadErr);
+      imageData = `data:${mimeType || 'image/png'};base64,${data}`;
+    }
+
+    return NextResponse.json({ imageData });
   } catch (error) {
     console.error('Image generation error:', error);
     const message =
