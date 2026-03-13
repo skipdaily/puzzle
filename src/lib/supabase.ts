@@ -77,3 +77,11 @@ export async function deletePuzzle(id: string): Promise<void> {
   const { error } = await supabase.from('puzzles').delete().eq('id', id);
   if (error) throw new Error(error.message);
 }
+
+export async function renamePuzzle(id: string, title: string): Promise<void> {
+  const { error } = await supabase
+    .from('puzzles')
+    .update({ title, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+}

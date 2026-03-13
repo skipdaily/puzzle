@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { fetchPuzzles, deletePuzzle } from '@/lib/supabase';
+import { fetchPuzzles, deletePuzzle, renamePuzzle } from '@/lib/supabase';
 import type { PuzzleRecord } from '@/lib/supabase';
 
 function formatDate(iso: string) {
@@ -24,6 +24,8 @@ export default function MyPuzzlesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -39,6 +41,25 @@ export default function MyPuzzlesPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const startEditing = (id: string, currentTitle: string) => {
+    setEditingId(id);
+    setEditingTitle(currentTitle);
+  };
+
+  const commitRename = async (id: string) => {
+    const trimmed = editingTitle.trim();
+    setEditingId(null);
+    if (!trimmed) return;
+    try {
+      await renamePuzzle(id, trimmed);
+      setPuzzles((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, title: trimmed } : p))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to rename');
+    }
+  };
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
@@ -111,9 +132,28 @@ export default function MyPuzzlesPage() {
               >
                 <div className="p-5 flex-1">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="text-base font-semibold text-gray-900 leading-tight">
-                      {puzzle.title}
-                    </h3>
+                    {editingId === puzzle.id ? (
+                      <input
+                        autoFocus
+                        className="text-base font-semibold text-gray-900 border-b-2 border-blue-400 outline-none bg-transparent w-full leading-tight"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onBlur={() => commitRename(puzzle.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') commitRename(puzzle.id);
+                          if (e.key === 'Escape') setEditingId(null);
+                        }}
+                      />
+                    ) : (
+                      <h3
+                        className="text-base font-semibold text-gray-900 leading-tight cursor-pointer hover:text-blue-600 transition-colors group flex items-center gap-1"
+                        title="Click to rename"
+                        onClick={() => startEditing(puzzle.id, puzzle.title)}
+                      >
+                        {puzzle.title}
+                        <span className="text-gray-300 group-hover:text-blue-400 text-xs">✏️</span>
+                      </h3>
+                    )}
                     <span className="text-xs bg-gray-100 text-gray-500 rounded px-2 py-0.5 shrink-0">
                       {puzzle.page_size.toUpperCase()}
                     </span>
