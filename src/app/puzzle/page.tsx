@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { PuzzleEntry, PageSize, PuzzleSideData, PuzzleSideKey } from '@/lib/types';
@@ -27,7 +27,7 @@ function emptyEntry(id: string, templateIndex: number = 0): PuzzleEntry {
   };
 }
 
-export default function Home() {
+function PuzzleBuilder() {
   const searchParams = useSearchParams();
   const puzzleId = searchParams.get('id');
 
@@ -535,5 +535,13 @@ export default function Home() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-400">Loading…</div>}>
+      <PuzzleBuilder />
+    </Suspense>
   );
 }
