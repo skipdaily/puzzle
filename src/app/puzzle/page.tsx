@@ -364,38 +364,51 @@ function PuzzleBuilder() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-          {/* Back to hub */}
-          <Link href="/" className="text-gray-400 hover:text-gray-700 text-sm transition-colors shrink-0">
-            ← Hub
-          </Link>
-          <div className="h-4 w-px bg-gray-200" />
-          {/* Editable title */}
-          {editingTitle ? (
-            <input
-              autoFocus
-              className="text-lg font-bold text-gray-900 border-b-2 border-blue-400 outline-none bg-transparent w-52"
-              value={puzzleTitle}
-              onChange={(e) => setPuzzleTitle(e.target.value)}
-              onBlur={() => setEditingTitle(false)}
-              onKeyDown={(e) => { if (e.key === 'Enter') setEditingTitle(false); }}
-            />
-          ) : (
+        <div className="max-w-7xl mx-auto px-4 py-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3 sm:py-3">
+          {/* Row 1 on mobile: back + title + save */}
+          <div className="flex items-center gap-2 min-w-0">
+            <Link href="/" className="text-gray-400 hover:text-gray-700 text-sm transition-colors shrink-0">
+              ← Hub
+            </Link>
+            <div className="h-4 w-px bg-gray-200 shrink-0" />
+            {/* Editable title */}
+            {editingTitle ? (
+              <input
+                autoFocus
+                className="text-base font-bold text-gray-900 border-b-2 border-blue-400 outline-none bg-transparent min-w-0 flex-1"
+                value={puzzleTitle}
+                onChange={(e) => setPuzzleTitle(e.target.value)}
+                onBlur={() => setEditingTitle(false)}
+                onKeyDown={(e) => { if (e.key === 'Enter') setEditingTitle(false); }}
+              />
+            ) : (
+              <button
+                onClick={() => setEditingTitle(true)}
+                className="text-base font-bold text-gray-900 hover:text-blue-600 transition-colors text-left truncate min-w-0 flex-1"
+                title="Click to rename"
+              >
+                {puzzleTitle}
+              </button>
+            )}
+            {/* Save button always visible next to title on mobile */}
             <button
-              onClick={() => setEditingTitle(true)}
-              className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors text-left"
-              title="Click to rename"
+              onClick={openSaveModal}
+              disabled={saving}
+              className={`sm:hidden shrink-0 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                saveSuccess
+                  ? 'bg-green-500 text-white'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              } disabled:opacity-50`}
             >
-              {puzzleTitle}
+              {saving ? '…' : saveSuccess ? '✓' : '☁️ Save'}
             </button>
-          )}
-          {/* spacer */}
-          <div className="flex-1" />
-          {/* Actions */}
-          <div className="flex items-center gap-2">
+          </div>
+
+          {/* Row 2 on mobile / right side on desktop: secondary actions */}
+          <div className="flex items-center gap-2 sm:ml-auto">
             <Link
               href="/puzzles"
-              className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap"
             >
               📚 My Puzzles
             </Link>
@@ -411,10 +424,11 @@ function PuzzleBuilder() {
             >
               ⬇️ Export
             </button>
+            {/* Save button on desktop only */}
             <button
               onClick={openSaveModal}
               disabled={saving}
-              className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              className={`hidden sm:block px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                 saveSuccess
                   ? 'bg-green-500 text-white'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
