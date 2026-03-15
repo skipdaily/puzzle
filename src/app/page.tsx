@@ -9,7 +9,7 @@ export default function Home() {
           <p className="mt-2 text-gray-600">Choose a tool to get started.</p>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <Link
             href="/puzzle"
             className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
@@ -36,6 +36,34 @@ export default function Home() {
               View, edit, and manage all your saved puzzles in one place.
             </p>
             <div className="mt-4 text-sm font-medium text-emerald-600">View saved →</div>
+          </Link>
+
+          <Link
+            href="/sticker-sheet"
+            className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-amber-300 transition"
+          >
+            <div className="text-3xl mb-3">🏷️</div>
+            <h2 className="text-xl font-semibold text-gray-900 group-hover:text-amber-700">
+              Sticker Sheet Generator
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Create printable sticker sheets with AI-generated images — 20 labels per 8.5×11″ page.
+            </p>
+            <div className="mt-4 text-sm font-medium text-amber-600">Create stickers →</div>
+          </Link>
+
+          <Link
+            href="/sticker-sheets"
+            className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-orange-300 transition"
+          >
+            <div className="text-3xl mb-3">📦</div>
+            <h2 className="text-xl font-semibold text-gray-900 group-hover:text-orange-700">
+              My Sticker Sheets
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              View, edit, and manage all your saved sticker sheets.
+            </p>
+            <div className="mt-4 text-sm font-medium text-orange-600">View saved →</div>
           </Link>
 
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white/60 p-6">
